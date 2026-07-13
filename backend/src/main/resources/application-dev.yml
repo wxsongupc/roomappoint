@@ -1,11 +1,20 @@
+# ============================================================
+#  RoomMind 自习室预约系统 —— 本地开发环境配置
+#  使用方法：
+#    1. 安装 MySQL 8.0+，运行 resources/schema.sql（自动创建库和表+测试数据
+#    2. 如需完整预约功能：安装 RabbitMQ（否则预约消息队列
+#    3. 在 IDEA 中运行 WebApplication.main()
+# ============================================================
+
 server:
   port: 8080
   tomcat:
     relaxed-query-chars: '|,{,},[,]'
 
 spring:
+  # ---------- MySQL 数据库（本地）----------
   datasource:
-    url: jdbc:mysql://47.94.202.210:3306/dev_roommind?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://127.0.0.1:3306/dev_roommind?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&allowMultiQueries=true
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -19,6 +28,8 @@ spring:
     property-naming-strategy: UPPER_CAMEL_CASE
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
+
+  # ---------- 邮件服务 ----------
   mail:
     host: smtp.163.com
     port: 465
@@ -32,37 +43,31 @@ spring:
           auth: true
           ssl:
             enable: true
-        debug: true
+        debug: false
 
-  # rabbitmq 缩进在 spring 里面
+  # ---------- RabbitMQ 消息队列（本地，可选）----------
   rabbitmq:
-    # 连接配置
-    host: 47.94.202.210
+    host: 127.0.0.1
     port: 5672
-    username: dev_admin
-    password: 123456
-    virtual-host: dev_vhost
-
-    # 连接池配置
+    username: guest
+    password: guest
+    virtual-host: /
     connection-timeout: 5000ms
     requested-heartbeat: 30
-
-    # 生产者确认
     publisher-confirm-type: correlated
     publisher-returns: true
-
-    # 消费者配置
     listener:
       simple:
-        concurrency: 5
-        max-concurrency: 10
+        concurrency: 2
+        max-concurrency: 5
         prefetch: 1
-        acknowledge-mode: manual  # 手动确认
+        acknowledge-mode: manual
         retry:
           enabled: true
           max-attempts: 3
           initial-interval: 1000ms
 
+# ---------- MyBatis-Plus ----------
 mybatis-plus:
   mapper-locations: mapper/*.xml
   type-aliases-package: com.example.web.entity
@@ -77,16 +82,19 @@ logging:
   level:
     com.baomidou.mybatisplus: DEBUG
     org.mybatis: DEBUG
+    com.example.web: DEBUG
 
 app:
   upload:
     path: ./uploads-dev
     url-prefix: http://localhost:8080
     access-path: /uploads
+
+  # ---------- AI 助手（DeepSeek API）----------
   deepseek:
     api-key: sk-60a8f49433a440fe86a51f9eb05f450f
     base-url: https://api.deepseek.com
     model: deepseek-chat
     temperature: 0.7
     max-tokens: 2048
-    system-prompt: 你是一个自习室预约系统的智能助手。你可以帮助用户：1. 查询和预约自习室座位；2. 解答系统使用问题；3. 提供学习建议。请使用简洁、友好的中文回答用户问题。如果涉及具体预约操作，请引导用户前往相关页面操作。
+    system-prompt: 你是一个自习室预约系统的智能助手。你可以帮助用户查询自习室和座位。请用简洁中文回答。
